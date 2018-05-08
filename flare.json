@@ -1,0 +1,127 @@
+{
+  "name": "Tracking Audit",
+  "children": [
+    {
+      "name": "Extraction",
+	  "class": "extraction",
+      "children": [
+        {
+          "name": "SubFlow Creation",
+		  "class": "subflow"
+        },
+        {
+          "name": "BD Creation"
+        }
+      ]
+    },
+    {
+      "name": "Inbound",
+	  "class": "inbound",
+      "children": [
+        {
+          "name": "Subflow Creation",
+		  "class": "subflow"
+        },
+        {
+          "name": "Subflow Wait for Correlation",
+		  "class": "subflow"
+        },
+        {
+          "name": "Inbound Monitoring Event Publish",
+          "children": [
+            {
+              "name": "EU Monitoring Post",
+			  "class": "event-style1"
+            },
+            {
+              "name": "Inbound  DocStore Event Publish",
+              "children": [
+                {
+                  "name": "EU DocStore Post"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Invoice Disposition Event Publish",
+          "children": [
+            {
+              "name": "Invoice Disposition post"
+            }
+          ]
+        },
+        {
+          "name": "Vendormate Credentialing Event Publish",
+          "children": [
+            {
+              "name": "Vendormate Credentialing Post"
+            }
+          ]
+        },
+        {
+          "name": "BD Processing"
+        },
+        {
+          "name": "BT Processing"
+        },
+        {
+          "name": "CCX Contract Price Validation Event Publish",
+          "children": [
+            {
+              "name": "CCX Contract Price Validation Post"
+            },
+            {
+              "name": "BT Aggregation"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Outbound",
+	  "class": "outbound",
+      "children": [
+        {
+          "name": "Subflow Creation",
+		  "class": "subflow"
+        },
+        {
+          "name": "Subflow Wait for Correlation",
+		  "class": "subflow"
+        },
+        {
+          "name": "Outbound DocStore Event Publish",
+          "children": [
+            {
+              "name": "EU DocStore Post"
+            },
+            {
+              "name": "Outbound Monitoring Event Publish",
+              "children": [
+                {
+                  "name": "EU Monitoring Post"
+                },
+                {
+                  "name": "ODAP Monitoring Post"
+                },
+                {
+                  "name": "E-invoicing Monitoring Post"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "BD Update"
+        },
+        {
+          "name": "BT Update"
+        },
+        {
+          "name": "Done"
+        }
+      ]
+    }
+  ]
+}
