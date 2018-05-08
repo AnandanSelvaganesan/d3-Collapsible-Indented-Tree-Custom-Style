@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+
+body{ 
+	font-family:sans-serif;
+}
+.node rect {
+  cursor: pointer;
+  fill: #fff;
+  fill-opacity: 1;
+  stroke: #212121;
+  stroke-width: 1.5px;
+}
+
+.node_0 rect{
+	fill-opacity: 1;
+	fill: #8c8c8c;
+	stroke: #212121;
+}
+
+.node_1.extraction rect {
+	fill-opacity: 1;
+	fill: #ff7474;
+	stroke: red;
+}
+
+.node_1.inbound rect{
+	fill-opacity: 1;
+	fill: #e89075;
+	stroke: #E64A19;
+}
+
+.node_1.outbound rect{
+	fill-opacity: 1;
+	fill: #ff7474;
+	stroke: red;
+}
+.node.subflow rect{
+	fill-opacity: 1;
+	fill: #ffcfcf;
+	stroke: #ff9999;
+}
+.node_2 rect{
+	fill-opacity: 1;
+	fill: #a4cee4;
+	stroke: #0288D1;
+}
+.node_3 rect{
+	fill-opacity: 1;
+	fill: #c6dbef;
+	stroke: #9bc1e4;
+}
+.node_4 rect{
+	fill-opacity: 1;
+	fill: #ffd182;
+	stroke: #FFA000;
+}
+
+.node text {
+  font-size: 11px;
+  pointer-events: none;
+}
+
+.link {
+  fill: none;
+  stroke: #212121;
+  stroke-width: 1.5px;
+}
+
+.link_2 {
+	stroke: #0288D1;
+}
+.link_2.subflow {
+	stroke: #ff9999;
+}
+.link_3.subflow {
+	stroke: #0288D1;
+}
+.link_3{
+	stroke: #9bc1e4;
+}
+.link_4 {
+	stroke: #FFA000;
+}
+.event-style rect{
+	fill: #666;
+	stroke: #212121;
+}
+.event-style text{
+	font-weight:bold;
+	fill:#fff;
+}
+
+</style>
+<body>
+<script src="d3.v4.min.js"></script>
+<script>
+
+	var i = 0,
+	duration = 400,
+	root;
+
+	var margin = {top: 30, right: 20, bottom: 30, left: 20},
+		width = 480,
+		barHeight = 20,
+		barSpace = 10,
+		barWidth = (width - margin.left - margin.right) * 0.8;
+
+	var diagonal = d3.linkHorizontal()
+		.x(function(d) { return d.y; })
+		.y(function(d) { return d.x; });
+
+	var svg = d3.select("body").append("svg")
+		.attr("width", width) // + margin.left + margin.right)
+		.append("g")
+		.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+	d3.json("flare.json", function(error, flare) {
+	  if (error) throw error;
+	  root = d3.hierarchy(flare);
+	  root.x0 = 0;
+	  root.y0 = 0;
+	  update(root);
+	});
+
+	function update(source) {
+		//Compute the flattened node list.
+		var nodes = root.descendants();
+		var height = Math.max(1000, nodes.length * barHeight + margin.top + margin.bottom);
+
+		d3.select("svg").transition()
+			.duration(duration)
+			.attr("height", height);
+
+		d3.select(self.frameElement).transition()
+			.duration(duration)
+			.style("height", height + "px");
+
+		//Compute the "layout". TODO https://github.com/d3/d3-hierarchy/issues/67
+		var index = -1,
+			count = 0;
+		root.eachBefore(function(n) {
+			count+=barSpace;
+			n.style = "node_" + n.depth;
+			n.x = ++index * barHeight + count;
+			n.y = n.depth * 20;
+		});
+
+		// Update the nodes…
+		var node = svg.selectAll(".node")
+			.data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+		var nodeEnter = node.enter().append("g")
+			.attr("class", function(d){ return "node node_" + d.depth +" "+  getClass(d); })
+			.attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+			.style("opacity", 0);
+
+		//Enter any new nodes at the parent's previous position.
+		nodeEnter.append("rect")
+			.attr("y", -barHeight / 2)
+			.attr("height", barHeight)
+			.attr("width", barWidth)
+			.on("click", click);
+
+		nodeEnter.append("text")
+			.attr("dy", 3.5)
+			.attr("dx", 5.5)
+			.text(function(d) { return d.data.name; });
+		
+		nodeEnter.append("text")
+			.attr("dy", 3.5)
+			.attr("dx", barWidth-20)
+			.attr("font-family","FontAwesome")
+			.attr("class", "fa")
+			.text(function(d) {
+				if (d.children) {
+					return '\uf078';
+				} else if (d._children) {
+					return '\uf054';
+				} else {
+					return '';
+			}
+		});
+
+		node.select('.fa')
+			.text(function(d) {
+				if (d.children) {
+					return '\uf078';
+				} else if (d._children) {
+					return '\uf054';
+				} else {
+					return '';
+			}
+		});
+
+		//Transition nodes to their new position.
+		nodeEnter.transition()
+			.duration(duration)
+			.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+			.style("opacity", 1);
+
+		node.transition()
+			.duration(duration)
+			.attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+			.style("opacity", 1)
+			.select("rect")
+			.style("stroke",strokeColor)
+			.style("fill", color);
+
+		// Transition exiting nodes to the parent's new position.
+		node.exit().transition()
+			.duration(duration)
+			.attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+			.style("opacity", 0)
+			.remove();
+
+		//Update the links…
+		var link = svg.selectAll(".link")
+			.data(root.links(), function(d) { return d.target.id; });
+
+		//Enter any new links at the parent's previous position.
+		link.enter().insert("path", "g")
+			.attr("class", function(d){ 
+				return "link link_" + d.target.depth +" "+ getClass(d.target); 
+			})
+			.attr("d", function(d) {
+				var o = {x: source.x0, y: source.y0};
+				return elbow({source: o, target: o});
+			})
+			.transition()
+			.duration(duration)
+			.attr("d", elbow);
+
+		//Transition links to their new position.
+		link.transition()
+		.duration(duration)
+		.attr("d", elbow);
+
+		//Transition exiting nodes to the parent's new position.
+		link.exit().transition()
+			.duration(duration)
+			.attr("d", function(d) {
+				var o = {x: source.x, y: source.y};
+				return elbow({source: o, target: o});
+			})
+			.remove();
+
+		//Stash the old positions for transition.
+		root.each(function(d) {
+			d.x0 = d.x;
+			d.y0 = d.y;
+		});
+
+	}
+
+	/*Toggle children on click.
+	function click(d) {
+		if (d.children) {
+			d._children = d.children;
+			d.children = null;
+		} else {
+			d.children = d._children;
+			d._children = null;
+		}
+		update(d);
+	}*/
+
+	// Toggle children on click.
+	var lastClickD = null;
+	function click(d) {
+	  if (d.children) {
+		d._children = d.children;
+		d.children = null;
+	  } else {
+		d.children = d._children;
+		d._children = null;
+	  }
+	  if (lastClickD){
+		lastClickD._isSelected = false;
+	  }
+	  d._isSelected = true;
+	  lastClickD = d;
+	  update(d);
+	}
+	
+	function getClass(d){
+		if(d.data.class)
+		{
+			return d.data.class
+		}else{
+			return "";
+		}
+	}
+	function elbow(d) {
+		return "M" + d.source.y + "," + d.source.x
+		+ "H" + (d.source.y + (d.target.y-d.source.y)/2)
+		+ "V" + d.target.x 
+		+ "H" + d.target.y;
+	}
+	function color(d) {
+		//if (d._isSelected) return '#3f9ce0';
+		//return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
+	}
+
+	function strokeColor(d) {
+		//if (d._isSelected) return '#3182bd';
+		//return d._children ? "#3182bd" : d.children ? "#c6dbef" : "#fd8d3c";
+	}
+
+</script>
